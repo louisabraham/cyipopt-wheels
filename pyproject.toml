@@ -1,3 +1,35 @@
 [build-system]
-requires = ["cython>=0.29.37", "numpy>=1.25","setuptools>=68.1.2"]
+requires = ["cython>=0.29.37", "numpy>=2.0","setuptools>=68.1.2"]
 build-backend = "setuptools.build_meta"
+
+[tool.cibuildwheel]
+build = "cp310-* cp311-* cp312-* cp313-*"
+skip = "*-win32 *-manylinux_i686 *-musllinux_*"
+build-frontend = "pip"
+test-requires = "numpy"
+test-command = "python {project}/tools/test_wheel.py"
+
+[tool.cibuildwheel.linux]
+before-all = "bash {project}/tools/build_ipopt_manylinux.sh && bash {project}/tools/append_bundled_licenses.sh"
+environment = { PKG_CONFIG_PATH="/usr/local/lib/pkgconfig", LD_LIBRARY_PATH="/usr/local/lib" }
+
+[tool.cibuildwheel.macos]
+before-all = "bash {project}/tools/install_ipopt_conda.sh"
+before-build = "pip install --no-binary numpy 'numpy>=2.0' cython setuptools"
+build-frontend = { name = "pip", args = ["--no-build-isolation"] }
+test-requires = ""
+before-test = "pip install --no-binary numpy 'numpy>=2.0'"
+environment = { PKG_CONFIG_PATH="/tmp/ipopt_conda/lib/pkgconfig", DYLD_LIBRARY_PATH="/tmp/ipopt_conda/lib" }
+repair-wheel-command = "DYLD_LIBRARY_PATH=/tmp/ipopt_conda/lib delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}"
+
+[tool.cibuildwheel.windows]
+before-all = "curl -L -o ipopt.zip https://github.com/coin-or/Ipopt/releases/download/releases%2F3.14.11/Ipopt-3.14.11-win64-msvs2019-md.zip && 7z x ipopt.zip -oC:/ipopt"
+before-build = "pip install delvewheel"
+environment = { IPOPTWINDIR="C:/ipopt/Ipopt-3.14.11-win64-msvs2019-md" }
+repair-wheel-command = "delvewheel repair --add-path C:/ipopt/Ipopt-3.14.11-win64-msvs2019-md/bin -w {dest_dir} {wheel}"
+
+[tool.cibuildwheel.pyodide]
+before-all = "bash {project}/tools/setup_ipopt_pyodide.sh"
+before-build = "emcc -c /tmp/ipopt_wasm/lib/wasm32_bridges.c -o /tmp/ipopt_wasm/lib/wasm32_bridges.o && python3 {project}/tools/strip_wasm_features.py /tmp/ipopt_wasm/lib/lib*.a"
+build-frontend = "build"
+environment = { PKG_CONFIG_PATH="/tmp/ipopt_wasm/lib/pkgconfig", LDFLAGS="-sERROR_ON_UNDEFINED_SYMBOLS=0 -Wl,--no-fatal-warnings" }
