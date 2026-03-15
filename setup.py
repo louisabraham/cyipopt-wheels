@@ -36,6 +36,7 @@ import numpy as np
 
 
 exec(open("cyipopt/version.py", encoding="utf-8").read())
+DIST_NAME = "cyipopt-wheels"
 PACKAGE_NAME = "cyipopt"
 VERSION = __version__
 DESCRIPTION = "A Cython wrapper to the IPOPT optimization package"
@@ -182,7 +183,7 @@ if __name__ == "__main__":
     # the `cyipopt` and `ipopt` packages into the `site-packages` directory.
     # Both `import cyipopt` and `import ipopt` will work, with the later giving
     # a deprecation warning.
-    setup(name=PACKAGE_NAME,
+    setup(name=DIST_NAME,
           version=VERSION,
           author=AUTHOR,
           author_email=EMAIL,

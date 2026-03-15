@@ -98,3 +98,19 @@ jobs:
         with:
           name: all-dist
           path: dist/
+
+  publish:
+    name: Publish to PyPI
+    needs: [build_sdist, build_wheels, build_wheels_pyodide]
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
